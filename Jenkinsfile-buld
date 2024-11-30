@@ -30,10 +30,11 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    echo 'Stopping and removing any previous containers...'
+                    echo 'Stopping and removing any previous containers using the port...'
                     sh '''
-                        docker ps -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker stop
-                        docker ps -a -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker rm
+                        # Stop and remove any container using port 5000
+                        docker ps -q --filter "publish=${APP_PORT}" | xargs -r docker stop
+                        docker ps -a -q --filter "publish=${APP_PORT}" | xargs -r docker rm
                     '''
 
                     echo 'Running new Docker container...'
