@@ -2,93 +2,54 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'DOCKER_IMAGE', defaultValue: 'flask-app', description: 'Docker image name')
-        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Docker image tag')
+        string(name: 'DOCKER_IMAGE', defaultValue: 'flask-app', description: 'Enter the Docker image name')
+        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Enter the Docker image tag')
     }
 
     environment {
-        APP_PORT = '5000'  // Flask app port
-        APP_URL = "http://localhost:${APP_PORT}"  // URL to access the app
+        APP_PORT = '5000'                   // Flask app port
+        APP_URL = "http://localhost:${APP_PORT}" // URL to test the app
     }
 
     triggers {
-        githubPush()  // Automatically trigger on GitHub push
+        githubPush() // Automatically trigger on GitHub push
     }
 
     stages {
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    echo 'Building Docker image...'
-                    sh '''
-                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
-                    '''
-                }
-            }
-        }
-
-        stage('Stop and Remove Previous Containers') {
+        stage('Run Docker Container') {
             steps {
                 script {
                     echo 'Stopping and removing any previous containers...'
                     sh '''
-                        running_containers=$(docker ps -q --filter "name=${DOCKER_IMAGE}")
-                        if [ ! -z "$running_containers" ]; then
-                            docker stop $running_containers
-                        fi
-
-                        all_containers=$(docker ps -a -q --filter "name=${DOCKER_IMAGE}")
-                        if [ ! -z "$all_containers" ]; then
-                            docker rm $all_containers
-                        fi
-                    '''
-                }
-            }
-        }
-
-        stage('Free Up Port') {
-            steps {
-                script {
-                    echo 'Checking and freeing up port if in use...'
-                    def portUsed = sh(script: "lsof -i :${APP_PORT} -t || true", returnStdout: true).trim()
-                    if (portUsed) {
-                        echo "Port ${APP_PORT} is in use by process ID ${portUsed}. Terminating the process..."
-                        sh "kill -9 ${portUsed}"
-                    } else {
-                        echo "Port ${APP_PORT} is available."
-                    }
-                }
-            }
-        }
-
-        stage('Run Docker Container') {
-            steps {
-                script {
-                    echo 'Stopping any running container with the same name...'
-                    sh '''
-                        running_containers=$(docker ps -q --filter "name=${DOCKER_IMAGE}")
-                        if [ ! -z "$running_containers" ]; then
-                            docker stop $running_containers
-                        fi
-                    '''
-
-                    echo 'Removing any stopped containers...'
-                    sh '''
-                        all_containers=$(docker ps -a -q --filter "name=${DOCKER_IMAGE}")
-                        if [ ! -z "$all_containers" ]; then
-                            docker rm $all_containers
-                        fi
+                        docker ps -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker stop
+                        docker ps -a -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker rm
                     '''
 
                     echo 'Running new Docker container...'
                     sh '''
                         docker run -d -p ${APP_PORT}:${APP_PORT} --name ${DOCKER_IMAGE} ${DOCKER_IMAGE}:${DOCKER_TAG}
                     '''
-                    echo 'Waiting for Docker container logs...'
-                    sleep(time: 10, unit: 'SECONDS') // Ensure container has time to start
 
-                    echo 'Fetching Docker container logs...'
+                    echo 'Waiting for Docker container logs...'
+                    sleep time: 10, unit: 'SECONDS'
                     sh 'docker logs ${DOCKER_IMAGE}'
+                }
+            }
+        }
+
+        stage('Verify Flask App') {
+            steps {
+                script {
+                    echo 'Verifying if the Flask application is accessible...'
+                    retry(12) { // Retry up to 12 times, with a delay between each attempt
+                        sleep time: 5, unit: 'SECONDS'
+                        def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
+                        echo "HTTP Response: ${response}"
+                        if (response != '200') {
+                            error("Flask app is not ready. Retrying...")
+                        }
+                    }
+                    echo "Flask app is successfully running and accessible at ${APP_URL}"
                 }
             }
         }
@@ -99,9 +60,6 @@ pipeline {
                     echo "Testing Flask application at ${APP_URL}..."
                     def response = sh(script: "curl -s ${APP_URL}", returnStdout: true).trim()
                     echo "Response: ${response}"
-                    if (!response) {
-                        error "Flask application did not respond as expected."
-                    }
                 }
             }
         }
@@ -109,14 +67,12 @@ pipeline {
 
     post {
         success {
-            echo 'Build pipeline completed successfully!'
+            echo 'Deploy pipeline completed successfully!'
         }
         failure {
-            echo 'Build pipeline failed. Please check the logs for more details.'
+            echo 'Deploy pipeline failed. Please check the logs for more details.'
             echo 'Showing container logs for debugging...'
-            sh '''
-                docker logs ${DOCKER_IMAGE} || echo "No logs available."
-            '''
+            sh 'docker logs ${DOCKER_IMAGE}'
         }
     }
 }
