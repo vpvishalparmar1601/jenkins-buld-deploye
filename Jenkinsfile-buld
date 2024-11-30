@@ -54,7 +54,7 @@ pipeline {
             steps {
                 script {
                     echo 'Checking if the port is available...'
-                    def portUsed = sh(script: "lsof -i :${APP_PORT} -t", returnStdout: true).trim()
+                    def portUsed = sh(script: "lsof -i :${APP_PORT} -t || true", returnStdout: true).trim()
                     if (portUsed) {
                         echo "Port ${APP_PORT} is in use, killing process..."
                         sh "kill -9 ${portUsed}"
