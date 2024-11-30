@@ -8,4 +8,4 @@ def home():
 
 if __name__ == '__main__':
     # Ensures the app is accessible outside the container
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port={APP_PORT})

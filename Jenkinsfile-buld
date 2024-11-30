@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        APP_PORT = '5000'                          // Flask app port
+        APP_PORT = '1000'                          // Flask app port
         APP_URL = "http://localhost:${APP_PORT}"    // URL to test the app
     }
 
