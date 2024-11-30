@@ -7,8 +7,8 @@ pipeline {
     }
 
     environment {
-        APP_PORT = '5000'                   // Changed Flask app port to avoid conflict
-        APP_URL = "http://localhost:${APP_PORT}" // Updated URL to use the new port
+        APP_PORT = '5000'                   // Flask app port
+        APP_URL = "http://localhost:${APP_PORT}" // URL to access the app
     }
 
     triggers {
@@ -46,6 +46,21 @@ pipeline {
                     sh '''
                         docker images -q --filter "dangling=true" | xargs -r docker rmi
                     '''
+                }
+            }
+        }
+
+        stage('Check for Port Availability') {
+            steps {
+                script {
+                    echo 'Checking if the port is available...'
+                    def portUsed = sh(script: "lsof -i :${APP_PORT} -t", returnStdout: true).trim()
+                    if (portUsed) {
+                        echo "Port ${APP_PORT} is in use, killing process..."
+                        sh "kill -9 ${portUsed}"
+                    } else {
+                        echo "Port ${APP_PORT} is available."
+                    }
                 }
             }
         }
