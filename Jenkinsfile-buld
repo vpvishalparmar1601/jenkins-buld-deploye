@@ -2,18 +2,30 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'DOCKER_IMAGE', defaultValue: 'flask-app', description: 'Enter the Docker image name')
-        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Enter the Docker image tag')
+        string(name: 'DOCKER_IMAGE', defaultValue: 'flask-app', description: 'Docker image name')
+        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Docker image tag')
     }
 
     environment {
-        APP_PORT = '5000'                   // Flask app port
-        APP_URL = "http://localhost:${APP_PORT}" // URL to test the app
+        APP_PORT = '5000'  // Flask app port
+        APP_URL = "http://localhost:${APP_PORT}"  // URL to access the app
     }
 
     triggers {
-        githubPush() // Automatically trigger on GitHub push
+        githubPush()  // Automatically trigger on GitHub push
     }
+
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo 'Building Docker image...'
+                    sh '''
+                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                    '''
+                }
+            }
+        }
 
     stages {
         stage('Run Docker Container') {
