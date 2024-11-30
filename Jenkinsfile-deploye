@@ -15,7 +15,18 @@ pipeline {
         githubPush()  // Automatically trigger on GitHub push
     }
 
-   
+    stages {  // Make sure you have 'stages' here
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo 'Building Docker image...'
+                    sh '''
+                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                    '''
+                }
+            }
+        }
+
         stage('Run Docker Container') {
             steps {
                 script {
@@ -63,7 +74,7 @@ pipeline {
                 }
             }
         }
-    }
+    }  // Closing the stages block properly
 
     post {
         success {
