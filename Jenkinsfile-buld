@@ -67,10 +67,10 @@ pipeline {
 
     post {
         success {
-            echo 'Deploy pipeline completed successfully!'
+            echo 'Build pipeline completed successfully!'
         }
         failure {
-            echo 'Deploy pipeline failed. Please check the logs for more details.'
+            echo 'Build pipeline failed. Please check the logs for more details.'
             echo 'Showing container logs for debugging...'
             sh 'docker logs ${DOCKER_IMAGE}'
         }
