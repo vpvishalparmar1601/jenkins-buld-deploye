@@ -1,12 +1,28 @@
+pipeline {
+    agent any
 
-    stages {
+    parameters {
+        string(name: 'DOCKER_IMAGE', defaultValue: 'flask-app', description: 'Docker image name')
+        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Docker image tag')
+    }
+
+    environment {
+        APP_PORT = '5000'  // Flask app port
+        APP_URL = "http://localhost:${APP_PORT}"  // URL to access the app
+    }
+
+    triggers {
+        githubPush()  // Automatically trigger on GitHub push
+    }
+
+   
         stage('Run Docker Container') {
             steps {
                 script {
-                    echo 'Stopping and removing any previous containers...'
+                    echo 'Stopping and removing any previous containers using the port...'
                     sh '''
-                        docker ps -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker stop
-                        docker ps -a -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker rm
+                        docker ps -q --filter "publish=${APP_PORT}" | xargs -r docker stop
+                        docker ps -a -q --filter "publish=${APP_PORT}" | xargs -r docker rm
                     '''
 
                     echo 'Running new Docker container...'
@@ -20,3 +36,43 @@
                 }
             }
         }
+
+        stage('Verify Flask App') {
+            steps {
+                script {
+                    echo 'Verifying if the Flask application is accessible...'
+                    retry(12) { // Retry up to 12 times, with a delay between each attempt
+                        sleep time: 5, unit: 'SECONDS'
+                        def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
+                        echo "HTTP Response: ${response}"
+                        if (response != '200') {
+                            error("Flask app is not ready. Retrying...")
+                        }
+                    }
+                    echo "Flask app is successfully running and accessible at ${APP_URL}"
+                }
+            }
+        }
+
+        stage('Test Flask App') {
+            steps {
+                script {
+                    echo "Testing Flask application at ${APP_URL}..."
+                    def response = sh(script: "curl -s ${APP_URL}", returnStdout: true).trim()
+                    echo "Response: ${response}"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deploy pipeline completed successfully!'
+        }
+        failure {
+            echo 'Deploy pipeline failed. Please check the logs for more details.'
+            echo 'Showing container logs for debugging...'
+            sh 'docker logs ${DOCKER_IMAGE}'
+        }
+    }
+}
