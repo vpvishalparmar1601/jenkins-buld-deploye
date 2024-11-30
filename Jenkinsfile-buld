@@ -7,8 +7,8 @@ pipeline {
     }
 
     environment {
-        APP_PORT = '5000'                   // Flask app port
-        APP_URL = "http://localhost:${APP_PORT}" // URL to test the app
+        APP_PORT = '5001'                   // Changed Flask app port to avoid conflict
+        APP_URL = "http://localhost:${APP_PORT}" // Updated URL to use the new port
     }
 
     triggers {
