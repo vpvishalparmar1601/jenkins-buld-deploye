@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'DOCKER_IMAGE', defaultValue: 'flask-app', description: 'Docker image name')
-        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Docker image tag')
+        string(name: 'DOCKER_IMAGE', defaultValue: 'flask-app', description: 'Docker image name')  // Default value: 'flask-app'
+        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Docker image tag')         // Default value: 'latest'
     }
 
     environment {
-        APP_PORT = '5000'                   // Flask app port
-        APP_URL = "http://localhost:${APP_PORT}" // URL to test the app
+        APP_PORT = '5000'                          // Flask app port
+        APP_URL = "http://localhost:${APP_PORT}"    // URL to test the app
     }
 
     triggers {
@@ -16,6 +16,17 @@ pipeline {
     }
 
     stages {
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo 'Building Docker image...'
+                    sh '''
+                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                    '''
+                }
+            }
+        }
+
         stage('Run Docker Container') {
             steps {
                 script {
@@ -67,10 +78,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build pipeline completed successfully!'
+            echo 'Deploy pipeline completed successfully!'
         }
         failure {
-            echo 'Build pipeline failed. Please check the logs for more details.'
+            echo 'Deploy pipeline failed. Please check the logs for more details.'
             echo 'Showing container logs for debugging...'
             sh 'docker logs ${DOCKER_IMAGE}'
         }
