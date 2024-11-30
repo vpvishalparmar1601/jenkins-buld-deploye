@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'DOCKER_IMAGE', defaultValue: 'flask-app', description: 'Docker image name')  // Default value: 'flask-app'
-        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Docker image tag')         // Default value: 'latest'
+        string(name: 'DOCKER_IMAGE', defaultValue: 'flask-app', description: 'Docker image name')
+        string(name: 'DOCKER_TAG', defaultValue: 'latest', description: 'Docker image tag')
     }
 
     environment {
-        APP_PORT = '1000'                          // Flask app port
-        APP_URL = "http://localhost:${APP_PORT}"    // URL to test the app
+        APP_PORT = '5000'                   // Flask app port
+        APP_URL = "http://localhost:${APP_PORT}" // URL to test the app
     }
 
     triggers {
@@ -16,45 +16,23 @@ pipeline {
     }
 
     stages {
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    try {
-                        echo 'Building Docker image...'
-                        sh '''
-                            
-                            docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
-                        '''
-                    } catch (Exception e) {
-                        echo "Error in building Docker image: ${e.getMessage()}"
-                        throw e  // Rethrow exception to fail the pipeline
-                    }
-                }
-            }
-        }
-
         stage('Run Docker Container') {
             steps {
                 script {
-                    try {
-                        echo 'Stopping and removing any previous containers...'
-                        sh '''
-                            docker ps -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker stop
-                            docker ps -a -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker rm
-                        '''
+                    echo 'Stopping and removing any previous containers...'
+                    sh '''
+                        docker ps -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker stop
+                        docker ps -a -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker rm
+                    '''
 
-                        echo 'Running new Docker container...'
-                        sh '''
-                            docker run -d -p ${APP_PORT}:${APP_PORT} --name ${DOCKER_IMAGE} ${DOCKER_IMAGE}:${DOCKER_TAG}
-                        '''
+                    echo 'Running new Docker container...'
+                    sh '''
+                        docker run -d -p ${APP_PORT}:${APP_PORT} --name ${DOCKER_IMAGE} ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    '''
 
-                        echo 'Waiting for Docker container logs...'
-                        sleep time: 10, unit: 'SECONDS'
-                        sh 'docker logs ${DOCKER_IMAGE}'
-                    } catch (Exception e) {
-                        echo "Error in running Docker container: ${e.getMessage()}"
-                        throw e
-                    }
+                    echo 'Waiting for Docker container logs...'
+                    sleep time: 10, unit: 'SECONDS'
+                    sh 'docker logs ${DOCKER_IMAGE}'
                 }
             }
         }
@@ -62,21 +40,16 @@ pipeline {
         stage('Verify Flask App') {
             steps {
                 script {
-                    try {
-                        echo 'Verifying if the Flask application is accessible...'
-                        retry(12) { // Retry up to 12 times, with a delay between each attempt
-                            sleep time: 5, unit: 'SECONDS'
-                            def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
-                            echo "HTTP Response: ${response}"
-                            if (response != '200') {
-                                error("Flask app is not ready. Retrying...")
-                            }
+                    echo 'Verifying if the Flask application is accessible...'
+                    retry(12) { // Retry up to 12 times, with a delay between each attempt
+                        sleep time: 5, unit: 'SECONDS'
+                        def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
+                        echo "HTTP Response: ${response}"
+                        if (response != '200') {
+                            error("Flask app is not ready. Retrying...")
                         }
-                        echo "Flask app is successfully running and accessible at ${APP_URL}"
-                    } catch (Exception e) {
-                        echo "Error in verifying Flask app: ${e.getMessage()}"
-                        throw e
                     }
+                    echo "Flask app is successfully running and accessible at ${APP_URL}"
                 }
             }
         }
@@ -84,14 +57,9 @@ pipeline {
         stage('Test Flask App') {
             steps {
                 script {
-                    try {
-                        echo "Testing Flask application at ${APP_URL}..."
-                        def response = sh(script: "curl -s ${APP_URL}", returnStdout: true).trim()
-                        echo "Response: ${response}"
-                    } catch (Exception e) {
-                        echo "Error in testing Flask app: ${e.getMessage()}"
-                        throw e
-                    }
+                    echo "Testing Flask application at ${APP_URL}..."
+                    def response = sh(script: "curl -s ${APP_URL}", returnStdout: true).trim()
+                    echo "Response: ${response}"
                 }
             }
         }
@@ -99,10 +67,10 @@ pipeline {
 
     post {
         success {
-            echo 'Deploy pipeline completed successfully!'
+            echo 'Build pipeline completed successfully!'
         }
         failure {
-            echo 'Deploy pipeline failed. Please check the logs for more details.'
+            echo 'Build pipeline failed. Please check the logs for more details.'
             echo 'Showing container logs for debugging...'
             sh 'docker logs ${DOCKER_IMAGE}'
         }

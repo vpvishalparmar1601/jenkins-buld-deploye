@@ -4,8 +4,8 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return 'both pipeline is work properlly pipeline buls and deploye '
+    return 'both pipeline is work properlly pipeline buld'
 
 if __name__ == '__main__':
     # Ensures the app is accessible outside the container
-    app.run(host='0.0.0.0', port={APP_PORT})
+    app.run(host='0.0.0.0', port=5000)
