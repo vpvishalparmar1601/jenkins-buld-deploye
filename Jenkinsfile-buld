@@ -64,19 +64,30 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    echo 'Stopping and removing any old Docker containers...'
+                    echo 'Stopping any running container with the same name...'
                     sh '''
-                        docker ps -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker stop
-                        docker ps -a -q --filter "name=${DOCKER_IMAGE}" | xargs -r docker rm
+                        running_containers=$(docker ps -q --filter "name=${DOCKER_IMAGE}")
+                        if [ ! -z "$running_containers" ]; then
+                            docker stop $running_containers
+                        fi
+                    '''
+
+                    echo 'Removing any stopped containers...'
+                    sh '''
+                        all_containers=$(docker ps -a -q --filter "name=${DOCKER_IMAGE}")
+                        if [ ! -z "$all_containers" ]; then
+                            docker rm $all_containers
+                        fi
                     '''
 
                     echo 'Running new Docker container...'
                     sh '''
                         docker run -d -p ${APP_PORT}:${APP_PORT} --name ${DOCKER_IMAGE} ${DOCKER_IMAGE}:${DOCKER_TAG}
                     '''
-
                     echo 'Waiting for Docker container logs...'
                     sleep(time: 10, unit: 'SECONDS') // Ensure container has time to start
+
+                    echo 'Fetching Docker container logs...'
                     sh 'docker logs ${DOCKER_IMAGE}'
                 }
             }
