@@ -39,6 +39,17 @@ pipeline {
             }
         }
 
+        stage('Remove Old Docker Images') {
+            steps {
+                script {
+                    echo 'Removing old Docker images...'
+                    sh '''
+                        docker images -q --filter "dangling=true" | xargs -r docker rmi
+                    '''
+                }
+            }
+        }
+
         stage('Run Docker Container') {
             steps {
                 script {
