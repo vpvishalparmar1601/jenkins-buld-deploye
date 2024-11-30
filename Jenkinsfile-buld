@@ -39,24 +39,13 @@ pipeline {
             }
         }
 
-        stage('Remove Old Docker Images') {
+        stage('Free Up Port') {
             steps {
                 script {
-                    echo 'Removing old Docker images...'
-                    sh '''
-                        docker images -q --filter "dangling=true" | xargs -r docker rmi
-                    '''
-                }
-            }
-        }
-
-        stage('Check for Port Availability') {
-            steps {
-                script {
-                    echo 'Checking if the port is available...'
+                    echo 'Checking and freeing up port if in use...'
                     def portUsed = sh(script: "lsof -i :${APP_PORT} -t || true", returnStdout: true).trim()
                     if (portUsed) {
-                        echo "Port ${APP_PORT} is in use, killing process..."
+                        echo "Port ${APP_PORT} is in use by process ID ${portUsed}. Terminating the process..."
                         sh "kill -9 ${portUsed}"
                     } else {
                         echo "Port ${APP_PORT} is available."
