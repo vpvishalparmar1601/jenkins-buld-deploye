@@ -1,8 +1,0 @@
-version: '3'
-services:
-  flask-app:
-    image: ${DOCKER_IMAGE}:${DOCKER_TAG}
-    ports:
-      - "${APP_PORT}:${APP_PORT}"
-    environment:
-      - APP_PORT=${APP_PORT}
