@@ -48,22 +48,22 @@ pipeline {
             }
         }
 
- stage('Verify Flask App') {
-    steps {
-        script {
-            echo 'Verifying if the Flask application is accessible...'
-            retry(12) { // Retry up to 12 times, with a delay between each attempt
-                sleep time: 5, unit: 'SECONDS'
-                def response = bat(script: "curl -s -o nul -w %%{http_code} ${APP_URL}", returnStdout: true).trim()
-                echo "HTTP Response: ${response}"
-                if (response != '200') {
-                    error("Flask app is not ready. Retrying...")
+  stage('Verify Flask App') {
+            steps {
+                script {
+                    echo 'Verifying if the Flask application is accessible...'
+                    retry(12) { // Retry up to 12 times, with a delay between each attempt
+                        sleep time: 5, unit: 'SECONDS'
+                        def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
+                        echo "HTTP Response: ${response}"
+                        if (response != '200') {
+                            error("Flask app is not ready. Retrying...")
+                        }
+                    }
+                    echo "Flask app is successfully running and accessible at ${APP_URL}"
                 }
             }
-            echo "Flask app is successfully running and accessible at ${APP_URL}"
         }
-    }
-}
 
         stage('Test Flask App') {
             steps {
