@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return 'both pipeline is work properlly pipeline buld'
+    return 'hello vishal'
 
 if __name__ == '__main__':
     # Ensures the app is accessible outside the container
