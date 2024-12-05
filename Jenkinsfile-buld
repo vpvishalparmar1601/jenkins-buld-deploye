@@ -32,8 +32,8 @@ pipeline {
                 script {
                     echo 'Stopping and removing any previous containers using the port...'
                     bat '''
-                        for /f "tokens=*" %%i in ('docker ps -q --filter "publish=%APP_PORT%"') do docker stop %%i
-                        for /f "tokens=*" %%i in ('docker ps -a -q --filter "publish=%APP_PORT%"') do docker rm %%i
+                        for /f "tokens=*" %%i in ('docker ps -q --filter "ancestor=%DOCKER_IMAGE%:%DOCKER_TAG%"') do docker stop %%i
+                        for /f "tokens=*" %%i in ('docker ps -a -q --filter "ancestor=%DOCKER_IMAGE%:%DOCKER_TAG%"') do docker rm %%i
                     '''
 
                     echo 'Running new Docker container...'
@@ -54,7 +54,7 @@ pipeline {
                     echo 'Verifying if the Flask application is accessible...'
                     retry(12) { // Retry up to 12 times, with a delay between each attempt
                         sleep time: 5, unit: 'SECONDS'
-                        def response = bat(script: "curl -s -o NUL -w %%{http_code} %APP_URL%", returnStdout: true).trim()
+                        def response = bat(script: "curl -s -o NUL -w %{http_code} %APP_URL%", returnStdout: true).trim()
                         echo "HTTP Response: ${response}"
                         if (response != '200') {
                             error("Flask app is not ready. Retrying...")
