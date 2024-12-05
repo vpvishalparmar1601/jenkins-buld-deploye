@@ -41,20 +41,20 @@ pipeline {
                         docker run -d -p %APP_PORT%:%APP_PORT% --name %DOCKER_IMAGE% %DOCKER_IMAGE%:%DOCKER_TAG%
                     '''
 
-                    echo 'Waiting for Docker container to initialize...'
+                    echo 'Waiting for Docker container logs...'
                     sleep time: 10, unit: 'SECONDS'
                     bat 'docker logs %DOCKER_IMAGE%'
                 }
             }
         }
 
-        stage('Verify Flask App') {
+     stage('Verify Flask App') {
             steps {
                 script {
                     echo 'Verifying if the Flask application is accessible...'
                     retry(12) { // Retry up to 12 times, with a delay between each attempt
                         sleep time: 5, unit: 'SECONDS'
-                        def response = bat(script: "curl -s -o NUL -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
+                        def response = bat(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
                         echo "HTTP Response: ${response}"
                         if (response != '200') {
                             error("Flask app is not ready. Retrying...")
@@ -83,7 +83,7 @@ pipeline {
         failure {
             echo 'Deploy pipeline failed. Please check the logs for more details.'
             echo 'Showing container logs for debugging...'
-            bat 'docker logs %DOCKER_IMAGE%'
+            bat 'docker logs ${DOCKER_IMAGE}'
         }
     }
 }
