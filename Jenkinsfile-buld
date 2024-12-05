@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         APP_PORT = '5000'  // Flask app port
-        APP_URL = "http://localhost:${APP_PORT}"  // URL to access the app
+        APP_URL = "http://localhost:%APP_PORT%"  // URL to access the app
     }
 
     triggers {
@@ -48,19 +48,23 @@ pipeline {
             }
         }
 
-  stage('Verify Flask App') {
+        stage('Verify Flask App') {
             steps {
                 script {
                     echo 'Verifying if the Flask application is accessible...'
+
+                    // Print the APP_URL for debugging
+                    echo "Application URL: %APP_URL%"
+
                     retry(12) { // Retry up to 12 times, with a delay between each attempt
                         sleep time: 5, unit: 'SECONDS'
-                        def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
+                        def response = bat(script: "curl -s -o NUL -w %%{http_code} %APP_URL%", returnStdout: true).trim()
                         echo "HTTP Response: ${response}"
                         if (response != '200') {
                             error("Flask app is not ready. Retrying...")
                         }
                     }
-                    echo "Flask app is successfully running and accessible at ${APP_URL}"
+                    echo "Flask app is successfully running and accessible at %APP_URL%"
                 }
             }
         }
@@ -68,8 +72,8 @@ pipeline {
         stage('Test Flask App') {
             steps {
                 script {
-                    echo "Testing Flask application at ${APP_URL}..."
-                    def response = sh(script: "curl -s ${APP_URL}", returnStdout: true).trim()
+                    echo "Testing Flask application at %APP_URL%..."
+                    def response = bat(script: "curl -s %APP_URL%", returnStdout: true).trim()
                     echo "Response: ${response}"
                 }
             }
@@ -83,7 +87,7 @@ pipeline {
         failure {
             echo 'Deploy pipeline failed. Please check the logs for more details.'
             echo 'Showing container logs for debugging...'
-            sh 'docker logs ${DOCKER_IMAGE}'
+            bat 'docker logs %DOCKER_IMAGE%'
         }
     }
 }
