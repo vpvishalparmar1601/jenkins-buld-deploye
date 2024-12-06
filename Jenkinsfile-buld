@@ -44,22 +44,28 @@ pipeline {
             }
         }
 
-  stage('Verify Flask App') {
-            steps {
-                script {
-                    echo 'Verifying if the Flask application is accessible...'
-                    retry(12) { // Retry up to 12 times, with a delay between each attempt
-                        sleep time: 5, unit: 'SECONDS'
-                        def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
-                        echo "HTTP Response: ${response}"
-                        if (response != '200') {
-                            error("Flask app is not ready. Retrying...")
-                        }
-                    }
-                    echo "Flask app is successfully running and accessible at ${APP_URL}"
+stage('Verify Flask App') {
+    steps {
+        script {
+            echo 'Verifying if the Flask application is accessible...'
+            retry(12) { // Retry up to 12 times, with a delay between each attempt
+                sleep time: 5, unit: 'SECONDS'
+                def response
+                // Check for Windows environment (PowerShell or Command Prompt)
+                if (isUnix()) {
+                    response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
+                } else {
+                    response = bat(script: "curl -s -o nul -w %%{http_code} ${APP_URL}", returnStdout: true).trim()
+                }
+                echo "HTTP response code: ${response}"
+                // If you need to check for a specific response code (e.g., 200 for success)
+                if (response != "200") {
+                    error("Flask application is not accessible. HTTP Code: ${response}")
                 }
             }
         }
+    }
+}
 
         stage('Test Flask App') {
             steps {
