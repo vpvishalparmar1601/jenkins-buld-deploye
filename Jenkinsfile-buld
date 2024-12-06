@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         APP_PORT = '5000'  // Flask app port
-        APP_URL = "http://localhost:${APP_PORT}"  // URL to access the app
+        APP_URL = "http://localhost:%APP_PORT%"  // URL to access the app
     }
 
     triggers {
@@ -29,8 +29,10 @@ pipeline {
             steps {
                 script {
                     echo 'Stopping and removing any previous containers using the port...'
-                    bat "for /F \"tokens=*\" %%i in ('docker ps -q --filter \"publish=%APP_PORT%\"') do docker stop %%i"
-                    bat "for /F \"tokens=*\" %%i in ('docker ps -a -q --filter \"publish=%APP_PORT%\"') do docker rm %%i"
+                    bat '''
+                    for /F "tokens=*" %%i in ('docker ps -q --filter "publish=%APP_PORT%"') do docker stop %%i || echo "No containers to stop."
+                    for /F "tokens=*" %%i in ('docker ps -a -q --filter "publish=%APP_PORT%"') do docker rm %%i || echo "No containers to remove."
+                    '''
 
                     echo 'Running new Docker container...'
                     bat "docker run -d -p %APP_PORT%:%APP_PORT% --name %DOCKER_IMAGE% %DOCKER_IMAGE%:%DOCKER_TAG%"
@@ -54,7 +56,7 @@ pipeline {
                             error("Flask app is not ready. Retrying...")
                         }
                     }
-                    echo "Flask app is successfully running and accessible at ${APP_URL}"
+                    echo "Flask app is successfully running and accessible at %APP_URL%"
                 }
             }
         }
@@ -62,7 +64,7 @@ pipeline {
         stage('Test Flask App') {
             steps {
                 script {
-                    echo "Testing Flask application at ${APP_URL}..."
+                    echo "Testing Flask application at %APP_URL%..."
                     def response = bat(script: "curl -s %APP_URL%", returnStdout: true).trim()
                     echo "Response: ${response}"
                 }
