@@ -48,7 +48,6 @@ stage('Run Docker Container') {
     }
 }
 
-
 stage('Verify Flask App') {
     steps {
         script {
@@ -63,7 +62,8 @@ stage('Verify Flask App') {
                     response = bat(script: "curl -s -o nul -w %%{http_code} ${APP_URL}", returnStdout: true).trim()
                 }
                 echo "HTTP response code: ${response}"
-                // If you need to check for a specific response code (e.g., 200 for success)
+
+                // Check if the response code is 200
                 if (response != "200") {
                     error("Flask application is not accessible. HTTP Code: ${response}")
                 }
@@ -71,6 +71,7 @@ stage('Verify Flask App') {
         }
     }
 }
+
 
         stage('Test Flask App') {
             steps {
