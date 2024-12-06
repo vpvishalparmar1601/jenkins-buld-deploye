@@ -27,28 +27,35 @@ pipeline {
             }
         }
 
-        stage('Run Docker Container') {
-            steps {
-                script {
-                    echo 'Stopping and removing any previous containers using the image...'
-                    bat """
-                    for /F "delims=" %%i in ('docker ps -q --filter "ancestor=%DOCKER_IMAGE%"') do docker stop %%i || echo "No containers to stop."
-                    for /F "delims=" %%i in ('docker ps -a -q --filter "ancestor=%DOCKER_IMAGE%"') do docker rm %%i || echo "No containers to remove."
-                    """
+    stage('Run Docker Container') {
+    steps {
+        script {
+            echo 'Stopping any containers using port 5000...'
+            bat """
+            for /F "tokens=*" %%i in ('docker ps -q --filter "publish=5000"') do docker stop %%i || echo "No containers to stop on port 5000."
+            for /F "tokens=*" %%i in ('docker ps -a -q --filter "publish=5000"') do docker rm %%i || echo "No containers to remove on port 5000."
+            """
 
-                    echo 'Running new Docker container...'
-                    bat """
-                    docker run -d -p %APP_PORT%:%APP_PORT% --name %DOCKER_IMAGE% %DOCKER_IMAGE%:%DOCKER_TAG%
-                    """
+            echo 'Stopping and removing any previous containers using the image...'
+            bat """
+            for /F "delims=" %%i in ('docker ps -q --filter "ancestor=%DOCKER_IMAGE%"') do docker stop %%i || echo "No containers to stop."
+            for /F "delims=" %%i in ('docker ps -a -q --filter "ancestor=%DOCKER_IMAGE%"') do docker rm %%i || echo "No containers to remove."
+            """
 
-                    echo 'Waiting for Docker container logs...'
-                    sleep time: 10, unit: 'SECONDS'
+            echo 'Running new Docker container...'
+            bat """
+            docker run -d -p %APP_PORT%:%APP_PORT% --name %DOCKER_IMAGE% %DOCKER_IMAGE%:%DOCKER_TAG%
+            """
 
-                    echo 'Displaying Docker container logs:'
-                    bat "docker logs %DOCKER_IMAGE%"
-                }
-            }
+            echo 'Waiting for Docker container logs...'
+            sleep time: 10, unit: 'SECONDS'
+
+            echo 'Displaying Docker container logs:'
+            bat "docker logs %DOCKER_IMAGE%"
         }
+    }
+}
+
 
         stage('Verify Flask App') {
             steps {
