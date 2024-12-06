@@ -30,10 +30,10 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    echo 'Stopping and removing any previous containers using the port...'
+                    echo 'Stopping and removing any previous containers using the image...'
                     bat """
-                    for /F "tokens=*" %%i in ('docker ps -q --filter "ancestor=%DOCKER_IMAGE%') do docker stop %%i || echo "No containers to stop."
-                    for /F "tokens=*" %%i in ('docker ps -a -q --filter "ancestor=%DOCKER_IMAGE%') do docker rm %%i || echo "No containers to remove."
+                    docker ps -q --filter "ancestor=%DOCKER_IMAGE%" | for /F %%i in ('more') do docker stop %%i || echo "No containers to stop."
+                    docker ps -a -q --filter "ancestor=%DOCKER_IMAGE%" | for /F %%i in ('more') do docker rm %%i || echo "No containers to remove."
                     """
 
                     echo 'Running new Docker container...'
