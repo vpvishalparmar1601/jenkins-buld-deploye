@@ -33,7 +33,6 @@ pipeline {
                     echo 'Stopping and removing any previous containers using the port...'
                     bat '''
                         for /f "tokens=*" %%i in ('docker ps -q --filter "ancestor=%DOCKER_IMAGE%:%DOCKER_TAG%"') do docker stop %%i
-                        for /f "tokens=*" %%i in ('docker ps -a -q --filter "ancestor=%DOCKER_IMAGE%:%DOCKER_TAG%"') do docker rm %%i
                     '''
 
                     echo 'Running new Docker container...'
