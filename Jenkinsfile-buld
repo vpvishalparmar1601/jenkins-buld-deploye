@@ -48,34 +48,34 @@ pipeline {
                 }
             }
         }
+stage('Verify Flask App') {
+    steps {
+        script {
+            echo 'Verifying if the Flask application is accessible...'
+            retry(12) { // Retry up to 12 times, with a delay between each attempt
+                sleep time: 5, unit: 'SECONDS'
+                def response
+                // Check for Unix-based systems (Linux/Mac)
+                if (isUnix()) {
+                    response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
+                } else {
+                    // Check for Windows environment (PowerShell or Command Prompt)
+                    response = bat(script: "curl -s -o nul -w %%{http_code} ${APP_URL}", returnStdout: true).trim()
+                    // Ensure only the HTTP code is captured
+                    response = response.replaceAll(".*?([0-9]{3})", "\$1")
+                }
+                echo "HTTP response code: ${response}"
 
-        stage('Verify Flask App') {
-            steps {
-                script {
-                    echo 'Verifying if the Flask application is accessible...'
-                    retry(12) { // Retry up to 12 times, with a delay between each attempt
-                        sleep time: 5, unit: 'SECONDS'
-                        def response
-                        // Check for Unix-based systems (Linux/Mac)
-                        if (isUnix()) {
-                            response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
-                        } else {
-                            // Check for Windows environment (PowerShell or Command Prompt)
-                            response = bat(script: "curl -s -o nul -w %%{http_code} ${APP_URL}", returnStdout: true).trim()
-                            // Ensure only the HTTP code is captured
-                            response = response.replaceAll(".*?([0-9]{3})", "$1")
-                        }
-                        echo "HTTP response code: ${response}"
-
-                        // If response code is not 200, retry
-                        if (response != '200') {
-                            error("Flask app is not ready. HTTP Code: ${response}. Retrying...")
-                        }
-                    }
-                    echo "Flask app is successfully running and accessible at ${APP_URL}"
+                // If response code is not 200, retry
+                if (response != '200') {
+                    error("Flask app is not ready. HTTP Code: ${response}. Retrying...")
                 }
             }
+            echo "Flask app is successfully running and accessible at ${APP_URL}"
         }
+    }
+}
+
 
         stage('Test Flask App') {
             steps {
