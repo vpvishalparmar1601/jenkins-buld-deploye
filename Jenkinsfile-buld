@@ -61,7 +61,7 @@ stage('Verify Flask App') {
                 } else {
                     // Check for Windows environment (PowerShell or Command Prompt)
                     response = bat(script: "curl -s -o nul -w %%{http_code} ${APP_URL}", returnStdout: true).trim()
-                    // Ensure only the HTTP code is captured
+                    // Extract only the HTTP status code
                     response = response.replaceAll(".*?([0-9]{3})", "\$1")
                 }
                 echo "HTTP response code: ${response}"
