@@ -2,8 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'flask-app'
-        DOCKER_TAG = 'latest'
         APP_PORT = '5000' // Flask app port
         APP_URL = "http://localhost:${APP_PORT}" // URL to access the app
     }
@@ -17,9 +15,14 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker image...'
-                    bat '''
-                        docker build -t %DOCKER_IMAGE%:%DOCKER_TAG% .
-                    '''
+                    // Fetch Docker image name and tag dynamically based on the build context
+                    def DOCKER_IMAGE = 'flask-app'
+                    def DOCKER_TAG = 'latest'
+                    
+                    echo "Building Docker image with name: ${DOCKER_IMAGE} and tag: ${DOCKER_TAG}"
+                    bat """
+                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                    """
                 }
             }
         }
@@ -27,13 +30,25 @@ pipeline {
         stage('Run Docker Container Locally') {
             steps {
                 script {
-                    echo 'Running deployment script...'
-                    // Call the local deployment script
-                    if (isUnix()) {
-                        sh './deploy.sh'  // For Unix/Linux
-                    } else {
-                        bat 'deploy.bat'  // For Windows
-                    }
+                    echo 'Running Docker container locally...'
+                    def DOCKER_IMAGE = 'flask-app'  // Set image name
+                    def DOCKER_TAG = 'latest'  // Set image tag
+                    echo "Running container from image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    
+                    bat '''
+                        REM Stop and remove any container using the specified port
+                        for /f "tokens=*" %%i in ('docker ps -q --filter "publish=%APP_PORT%"') do (
+                            docker stop %%i
+                            docker rm %%i
+                        )
+                        
+                        REM Run the new Docker container
+                        docker run -d -p %APP_PORT%:%APP_PORT% --name %DOCKER_IMAGE% %DOCKER_IMAGE%:%DOCKER_TAG%
+                    '''
+                    
+                    echo 'Waiting for Docker container logs...'
+                    sleep time: 10, unit: 'SECONDS'
+                    bat 'docker logs %DOCKER_IMAGE%'
                 }
             }
         }
