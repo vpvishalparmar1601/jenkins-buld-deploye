@@ -55,18 +55,22 @@ stage('Verify Flask App') {
             retry(12) { // Retry up to 12 times, with a delay between each attempt
                 sleep time: 5, unit: 'SECONDS'
                 def response
-                // Check for Unix-based systems (Linux/Mac)
+                
+                // Use appropriate command based on the operating system
                 if (isUnix()) {
+                    // For Unix/Linux
                     response = sh(script: "curl -s -o /dev/null -w '%{http_code}' ${APP_URL}", returnStdout: true).trim()
                 } else {
-                    // Check for Windows environment (PowerShell or Command Prompt)
+                    // For Windows (ensure PowerShell or Command Prompt syntax is correct)
                     response = bat(script: "curl -s -o nul -w %%{http_code} ${APP_URL}", returnStdout: true).trim()
-                    // Extract only the HTTP status code
+                    // Extract the HTTP status code using regex
                     response = response.replaceAll(".*?([0-9]{3})", "\$1")
                 }
+                
+                // Log the response for debugging
                 echo "HTTP response code: ${response}"
-
-                // If response code is not 200, retry
+                
+                // Validate the response code
                 if (response != '200') {
                     error("Flask app is not ready. HTTP Code: ${response}. Retrying...")
                 }
