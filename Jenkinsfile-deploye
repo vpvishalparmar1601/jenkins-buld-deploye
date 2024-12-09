@@ -30,8 +30,7 @@ pipeline {
                     echo 'Waiting for Docker container logs...'
                     sleep time: 10, unit: 'SECONDS'
                     
-                    // Fetch the logs from the container
-                    bat "docker logs %DOCKER_IMAGE%"
+                   
                 }
             }
         }
