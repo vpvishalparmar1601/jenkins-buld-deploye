@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return 'hello vishal'
+    return 'hello docker'
 
 if __name__ == '__main__':
     # Ensures the app is accessible outside the container
