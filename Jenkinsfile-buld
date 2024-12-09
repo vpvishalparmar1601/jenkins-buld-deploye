@@ -7,12 +7,12 @@ pipeline {
     }
 
     environment {
-        APP_PORT = '5000' /* Flask app port */
-        APP_URL = "http://localhost:${APP_PORT}" /* URL to access the app */
+        APP_PORT = '5000' // Flask app port
+        APP_URL = "http://localhost:${APP_PORT}" // URL to access the app
     }
 
     triggers {
-        githubPush()  // Automatically trigger on GitHub push
+        githubPush() // Automatically trigger on GitHub push
     }
 
     stages {
@@ -48,7 +48,8 @@ pipeline {
                 }
             }
         }
-stage('Verify Flask App') {
+
+ stage('Verify Flask App') {
     steps {
         script {
             echo 'Verifying if the Flask application is accessible...'
@@ -76,8 +77,9 @@ stage('Verify Flask App') {
         }
     }
 }
+    }
 
-post {
+    post {
         success {
             echo 'Deploy pipeline completed successfully!'
         }
@@ -88,4 +90,3 @@ post {
         }
     }
 }
-
