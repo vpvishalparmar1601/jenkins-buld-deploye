@@ -106,7 +106,7 @@ stage('Verify Flask App') {
         failure {
             echo 'Deploy pipeline failed. Please check the logs for more details.'
             echo 'Showing container logs for debugging...'
-            bat 'docker logs ${DOCKER_IMAGE}'
+            sh 'docker logs ${DOCKER_IMAGE}'
         }
     }
 }
