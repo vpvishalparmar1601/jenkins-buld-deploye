@@ -78,17 +78,7 @@ stage('Verify Flask App') {
 }
 
 
-        stage('Test Flask App') {
-            steps {
-                script {
-                    echo "Testing Flask application at ${APP_URL}..."
-                    def response = sh(script: "curl -s ${APP_URL}", returnStdout: true).trim()
-                    echo "Response: ${response}"
-                }
-            }
-        }
-    }
-
+    
     post {
         success {
             echo 'Deploy pipeline completed successfully!'
