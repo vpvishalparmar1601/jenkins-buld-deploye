@@ -22,14 +22,7 @@ pipeline {
 
                     echo "Running Docker container for ${DOCKER_IMAGE}:${DOCKER_TAG} on local server at ${APP_URL}"
 
-                    // Stop and remove any container using the specified port (5000)
-                    bat '''
-                        REM Stop and remove any existing container using the specified port
-                        for /f "tokens=*" %%i in ('docker ps -q --filter "publish=%APP_PORT%"') do (
-                            docker stop %%i
-                            docker rm %%i
-                        )
-                    '''
+                  
                     
                     // Run the Docker container locally using the image and tag from the environment
                     bat """
