@@ -15,8 +15,7 @@ pipeline {
         githubPush()  // Automatically trigger on GitHub push
     }
 
-   
-      
+    stages {
         stage('Run Docker Container') {
             steps {
                 script {
@@ -59,8 +58,6 @@ pipeline {
                         }
                         
                         echo "HTTP response code: ${response}"
-                        
-                     
                     }
                     echo "Flask app is successfully running and accessible at ${APP_URL}"
                 }
@@ -71,7 +68,7 @@ pipeline {
             steps {
                 script {
                     echo "Testing Flask application at ${APP_URL}..."
-                    response = bat(script: "curl -s -o nul -w %%{http_code} ${APP_URL}", returnStdout: true).trim()
+                    def response = bat(script: "curl -s -o nul -w %%{http_code} ${APP_URL}", returnStdout: true).trim()
                     echo "Response: ${response}"
                 }
             }
