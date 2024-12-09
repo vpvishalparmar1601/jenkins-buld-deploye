@@ -25,11 +25,7 @@ pipeline {
                   
                     
                     // Run the Docker container locally using the image and tag from the environment
-                    bat """
-                        REM Running new Docker container on port %APP_PORT%
-                        docker run -d -p %APP_PORT%:%APP_PORT% --name %DOCKER_IMAGE% %DOCKER_IMAGE%:%DOCKER_TAG%
-                    """
-                    
+                 
                     // Wait a few seconds to ensure the container is fully up
                     echo 'Waiting for Docker container logs...'
                     sleep time: 10, unit: 'SECONDS'
