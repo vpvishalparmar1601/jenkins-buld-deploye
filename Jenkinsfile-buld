@@ -78,16 +78,26 @@ stage('Verify Flask App') {
 }
 
 
-        stage('Test Flask App') {
-            steps {
-                script {
-                    echo "Testing Flask application at ${APP_URL}..."
-                    def response = sh(script: "curl -s ${APP_URL}", returnStdout: true).trim()
-                    echo "Response: ${response}"
-                }
+      stage('Test Flask App') {
+    steps {
+        script {
+            echo "Testing Flask application at ${APP_URL}..."
+            
+            def response
+            // Check for Unix-based systems (Linux/Mac)
+            if (isUnix()) {
+                response = sh(script: "curl -s ${APP_URL}", returnStdout: true).trim()
+            } else {
+                // For Windows, use bat to run the curl command
+                response = bat(script: "curl -s ${APP_URL}", returnStdout: true).trim()
+                // Extract only the actual response
+                response = response.replaceAll(".*\r\n", "").trim()
             }
+            
+            echo "Response: ${response}"
         }
     }
+}
 
     post {
         success {
@@ -96,7 +106,7 @@ stage('Verify Flask App') {
         failure {
             echo 'Deploy pipeline failed. Please check the logs for more details.'
             echo 'Showing container logs for debugging...'
-            sh 'docker logs ${DOCKER_IMAGE}'
+            bat 'docker logs ${DOCKER_IMAGE}'
         }
     }
 }
