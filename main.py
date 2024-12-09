@@ -1,16 +1,10 @@
-from flask import Flask, jsonify
+from flask import Flask
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return 'Hello Vishal! Welcome to the Flask App.'
-
-# Health check endpoint
-@app.route('/health', methods=['GET'])
-def health_check():
-    # Returning a JSON response for better clarity
-    return jsonify(status="UP", message="Flask app is running"), 200
+    return 'hello vishal'
 
 if __name__ == '__main__':
     # Ensures the app is accessible outside the container
